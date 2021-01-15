@@ -1,0 +1,158 @@
+---
+title: "Data wrangling"
+author: "Ben Baumer"
+date: "1/13/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(fivethirtyeight)
+```
+
+## Some basic data wrangling
+
+```{r}
+sandy_311
+
+# keep only some columns
+sandy_nyc <- sandy_311 %>%
+  select(date, contains("nyc"))
+
+# add and/or modify a column
+emergency_responders <- sandy_311 %>%
+  select(date, nyc_311, nypd, fema) %>%
+  mutate(
+    police_and_emergency = nypd + fema,
+    calls_in_thousands = nyc_311 / 1000
+  )
+
+# keep only some rows
+sandy_311 %>%
+  filter(date >= "2012-11-01")
+
+sandy_311 %>%
+  filter(date < "2012-11-01")
+
+sandy_311 %>%
+  filter("2012-10-25" < date | date < "2012-11-01")
+
+# sort the data frame
+sandy_311 %>%
+  select(date, total, nyc_311) %>%
+  arrange(nyc_311, desc(total))
+```
+
+## Aggregating
+
+```{r}
+sandy_311
+library(lubridate)
+
+sandy_311 %>%
+  mutate(
+    date_text = as.character(date),
+    year = year(date),
+    month = month(date)
+  ) %>%
+#  select(date, year) %>%
+#  mutate(next_day = date_text + 1)
+  group_by(month, year) %>%
+  summarize(
+    num_days = n(),
+    avg_311 = mean(nyc_311),
+    avg_total = mean(total), 
+    begin = min(date), 
+    end = max(date),
+    span = paste0(begin, ":", end)
+  ) %>%
+  filter(num_days < 28)
+```
+
+
+## Babynames
+
+```{r}
+library(babynames)
+babynames %>%
+  filter(name == "Jackie") %>%
+  group_by(year) %>%
+  summarize(
+    num_sexes = n(), 
+    total = sum(n), 
+    boys = sum(ifelse(sex == "M", n, 0)),
+    girls = total - boys,
+    girl_pct = girls / total
+  )
+```
+
+```{r}
+# approach 1: clever approach
+
+babynames %>%
+  group_by(name) %>%
+  summarize(num_rows = n()) %>%
+  filter(num_rows == 276)
+
+# approach 2, more straightforward
+
+babynames %>%
+  group_by(name, sex) %>%
+  summarize(
+    num_rows = n()
+  ) %>%
+  filter(num_rows == 138) %>%
+  group_by(name) %>%
+  summarize(
+    num_sex = n_distinct(sex)
+  ) %>%
+  filter(num_sex == 2)
+
+# approach 3, similar
+
+babynames %>%
+  group_by(name, year) %>%
+  summarize(num_sexes = n_distinct(sex)) %>%
+  filter(num_sexes == 2) %>%
+  group_by(name) %>%
+  summarize(num_years = n()) %>%
+  filter(num_years == 138)
+
+```
+
+## Joining two tables
+
+
+```{r}
+library(mdsr)
+Violations %>%
+  filter(zipcode == 11222) %>%
+  select(dba, violation_code, cuisine_code)
+```
+
+
+```{r}
+first_part <- Violations %>%
+  filter(zipcode == 11222) %>%
+  left_join(Cuisines, by = c("cuisine_code" = "cuisine_code"))
+
+first_part %>%
+  select(inspection_date, dba, cuisine_description, violation_code) %>%
+  left_join(ViolationCodes, by = c("violation_code" = "violation_code")) %>%
+  select(-critical_flag, -violation_code)
+```
+
+## Which restaurants in Greenpoint had the most violations, and what were they? 
+
+```{r}
+Violations %>%
+  filter(zipcode == 11222) %>%
+  group_by(dba, cuisine_code) %>%
+  summarize(num_violations = n()) %>%
+  arrange(desc(num_violations)) %>%
+  left_join(Cuisines, by = "cuisine_code")
+```
+

@@ -1,0 +1,78 @@
+---
+title: "A new title"
+author: "Ben Baumer"
+date: "1/5/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+## Exercise 1
+
+
+
+- The visual cue of color is **mapped** to the variable economic recovery. 
+
+```{r, message=TRUE}
+library(tidyverse)
+library(openintro)
+present %>%
+  mutate(
+    total = boys + girls, 
+    twice_the_total = 2 * total
+  )
+```
+
+```{r, eval=FALSE}
+arbuthnot
+```
+
+```{r, eval=FALSE}
+# long, slow chunk
+R code
+
+save(the_data_frame_i_created)
+```
+
+```{r}
+load(the_data_frame_i_created)
+```
+
+
+
+```{r, message= FALSE, eval = TRUE}
+
+data("babies")
+
+my_babies <- babies %>%
+  mutate(mother_smoked = ifelse(smoke == 0, "No", "Yes")) %>%
+  drop_na()
+
+babies_plot <- ggplot(data = my_babies, aes(x = gestation, y = height, color = age))+
+  geom_jitter(width = 0, height = 0.25) +
+  facet_wrap(~mother_smoked, ncol = 1)+
+  scale_color_distiller(palette = "Oranges")+
+  labs(
+    title = "Height of babies in relation to gestation length",
+    subtitle = "smoke",
+    caption = "Source: openintro"
+  ) + 
+  scale_x_continuous("Gestational period (days)") + 
+  scale_y_continuous("Height (cm)")
+babies_plot
+```
+
+```{r, eval=FALSE}
+install.packages("fivethirtyeight")
+```
+
+
+```{r}
+# install.packages("fivethirtyeight")
+library(fivethirtyeight)
+```
+
