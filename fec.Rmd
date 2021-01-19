@@ -1,0 +1,35 @@
+---
+title: "FEC"
+author: "Ben Baumer"
+date: "1/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## FEC data
+
+```{r}
+library(fec16)
+candidates
+```
+
+```{r, eval=FALSE}
+# Run this ONCE!!
+contributions_all <- read_all_contributions()
+saveRDS(contributions_all, "contributions_all.rda")
+```
+
+```{r}
+# Run this every time you knit
+contributions_all <- readRDS("contributions_all.rda")
+```
+
+```{r}
+nrow(contributions_all)
+```
+
+
