@@ -156,3 +156,17 @@ Violations %>%
   left_join(Cuisines, by = "cuisine_code")
 ```
 
+## Reading a CSV
+
+```{r}
+library(tidyverse)
+life_expectancy <- read_csv("life_expectancy_years.csv")
+life_expectancy <- read_csv("~/sds192-i21-scratchwork/life_expectancy_years.csv")
+
+life_expectancy <- read_csv("bad/life_expectancy_years.csv")
+
+
+```
+
+
+
