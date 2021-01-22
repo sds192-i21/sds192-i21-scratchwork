@@ -168,5 +168,91 @@ life_expectancy <- read_csv("bad/life_expectancy_years.csv")
 
 ```
 
+## Joining lab, Exercise 3
 
+What is the most commonly-used plane? Find it’s manufacturer and model.
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+
+flights %>%
+  inner_join(planes, by = "tailnum") %>%
+  group_by(tailnum, manufacturer, model) %>%
+  summarize(num_flights = n()) %>%
+  arrange(desc(num_flights))
+
+flights %>%
+  group_by(tailnum) %>%
+  summarize(num_flights = n()) %>%
+  arrange(desc(num_flights)) %>%
+  inner_join(planes, by = "tailnum")
+
+flights %>%
+  group_by(tailnum) %>%
+  summarize(num_flights = n()) %>%
+  arrange(desc(num_flights)) %>%
+  left_join(planes, by = "tailnum")
+```
+
+```{r}
+flights %>%
+  left_join(planes, by = "tailnum") %>%
+  group_by(model) %>%
+  summarize(num_flights = n()) %>%
+  arrange(desc(num_flights))
+```
+
+## Pivoting
+
+```{r}
+library(fivethirtyeight)
+ggplot(data = drug_use, aes(x = age, y = alcohol_use)) +
+  geom_point()
+
+
+drug_use %>%
+  select(age, alcohol_use, marijuana_use, cocaine_use) %>%
+  pivot_longer(-age, names_to = "substance", values_to = "usage_rate") %>%
+  ggplot(aes(x = age, y = usage_rate, color = reorder(substance, usage_rate))) +
+  geom_point()
+```
+
+## FEC
+
+
+```{r}
+library(fec16)
+
+contributions %>% View()
+
+one_trans <- contributions %>%
+  head(1)
+one_trans %>%
+  select(cmte_id, entity_tp, name, other_id, cand_id)
+
+committees %>%
+  filter(cmte_id == "C00002766") %>%
+  select(cmte_id, cmte_nm, cand_id)
+
+committees %>%
+  filter(cmte_id == "C00433136") %>%
+  select(cmte_id, cmte_nm, cand_id)
+
+candidates %>%
+  filter(cand_id == "H8MA05143") %>%
+  select(cand_id, cand_name)
+
+one_trans %>%
+  left_join(committees, by = c("cmte_id" = "cmte_id")) %>%
+  left_join(committees, by = c("other_id" = "cmte_id")) %>%
+  left_join(candidates, by = c("cand_id" = "cand_id")) %>%
+  select(
+    spender = cmte_nm.x, 
+    recipient = name, 
+    recipient2 = cmte_nm.y, 
+    cand_name
+  )
+
+```
 
