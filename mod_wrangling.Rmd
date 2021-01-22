@@ -227,7 +227,7 @@ library(fec16)
 contributions %>% View()
 
 one_trans <- contributions %>%
-  head(1)
+  head(3)
 one_trans %>%
   select(cmte_id, entity_tp, name, other_id, cand_id)
 
@@ -240,7 +240,7 @@ committees %>%
   select(cmte_id, cmte_nm, cand_id)
 
 candidates %>%
-  filter(cand_id == "H8MA05143") %>%
+  filter(cand_id == "S6NC00266") %>%
   select(cand_id, cand_name)
 
 one_trans %>%
@@ -254,5 +254,148 @@ one_trans %>%
     cand_name
   )
 
+```
+
+
+```{r}
+contributions %>%
+  group_by(transaction_tp) %>%
+  summarize(
+    num_transactions = n(),
+    total_amount = sum(transaction_amt)
+  )
+
+contributions %>%
+  filter(transaction_amt < 0) %>% View()
+
+contributions %>%
+  filter(cmte_id == "C00242040")
+```
+
+
+## Reading data
+
+```{r, eval=FALSE}
+contributions_all <- read_all_contributions()
+saveRDS(contributions_all, "contributions_all.rda")
+
+transactions_all <- read_all_transactions()
+saveRDS(transactions_all, "transactions_all.rda")
+
+expenditures_all <- read_all_expenditures()
+saveRDS(expenditures_all, "expenditures_all.rda")
+
+individuals_all <- read_all_individuals()
+saveRDS(individuals_all, "individuals_all.rda")
+```
+
+```{r}
+contributions_all <- readRDS("contributions_all.rda")
+```
+
+## Reconciliation
+
+```{r}
+# food workers
+food_contributions <- contributions_all %>%
+  filter(cmte_id == "C00002766")
+
+food_transactions <- transactions_all %>%
+  filter(cmte_id == "C00002766")
+
+food_expenditures <- expenditures_all %>%
+  filter(cmte_id == "C00002766")
+
+food_contributions %>%
+  inner_join(food_transactions, by = "tran_id")
+
+food_expenditures %>%
+  inner_join(food_transactions, by = "tran_id")
+
+food_transactions %>%
+  anti_join(food_contributions, by = "tran_id") %>% View()
+```
+
+```{r}
+# Working America
+working_contributions <- contributions_all %>%
+  filter(cmte_id == "C90011156")
+
+working_transactions <- transactions_all %>%
+  filter(cmte_id == "C90011156")
+
+working_expenditures <- expenditures_all %>%
+  filter(cmte_id == "C90011156")
+
+working_contributions %>%
+  left_join(working_transactions, by = "tran_id")
+
+length(unique(working_contributions$tran_id))
+length(unique(working_transactions$tran_id))
+
+# Working-Brewer
+
+brewer_contr <- working_contributions %>%
+  filter(name == "BREWER, SANDRA") %>%
+  left_join(candidates, by = c("cand_id")) 
+
+working_contributions %>%
+  filter(transaction_tp != "24A")
+
+brewer_trans <- working_transactions %>%
+  filter(name == "BREWER, SANDRA")
+
+brewer_contr %>%
+  inner_join(brewer_trans, by = "tran_id") %>% View()
+
+brewer_contr %>%
+  filter(tran_id == "VN7CZA3SHB5")
+
+brewer_trans %>%
+  filter(tran_id == "VN7CZA3SHB5")
+
+candidates %>%
+  filter(cand_id == "S4NC00089")
+```
+
+## Report types
+
+```{r}
+contributions_all %>%
+  group_by(rpt_tp) %>%
+  summarize(
+    num_contributions = n(),
+    num_transactions = n_distinct(tran_id),
+    total_amount = sum(transaction_amt)
+  ) %>%
+  arrange(desc(total_amount))
+
+working_contributions %>%
+  group_by(rpt_tp) %>%
+  summarize(
+    num_contributions = n(),
+    total_amount = sum(transaction_amt)
+  ) %>%
+  arrange(desc(total_amount))
+```
+
+## Entity types
+
+```{r}
+transactions_all %>%
+  group_by(entity_tp) %>%
+  summarize(
+    num_contributions = n(),
+    total_amount = sum(transaction_amt)
+  ) %>%
+  arrange(desc(total_amount))
+
+contributions_all %>%
+  group_by(entity_tp) %>%
+  summarize(
+    num_contributions = n(),
+    total_amount = sum(transaction_amt)
+  ) %>%
+  arrange(desc(total_amount))
 ```
 
