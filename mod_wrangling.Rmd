@@ -285,6 +285,7 @@ saveRDS(transactions_all, "transactions_all.rda")
 expenditures_all <- read_all_expenditures()
 saveRDS(expenditures_all, "expenditures_all.rda")
 
+# watch out this could take a looooong time!
 individuals_all <- read_all_individuals()
 saveRDS(individuals_all, "individuals_all.rda")
 ```
