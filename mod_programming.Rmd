@@ -1,0 +1,80 @@
+---
+title: "Programming with data"
+author: "Ben Baumer"
+date: "1/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Functions
+
+```{r}
+starwars
+
+ggplot(starwars, aes(x = mass, y = height)) + 
+  geom_point() + 
+  facet_wrap(~species)
+```
+
+### Isolates a certain species and draws a plot
+
+```{r}
+plot_species <- function(species_arg = "Human", highlight_color) {
+  starwars %>%
+    filter(species == species_arg) %>%
+    ggplot(aes(x = mass, y = height)) + 
+    geom_point(color = highlight_color)
+}
+```
+
+```{r}
+# works
+plot_species("Droid", "red")
+
+# no error, no data
+plot_species("red", "Droid")
+
+# works
+plot_species("red", species_arg = "Droid")
+
+# works
+plot_species(highlight_color = "red", "Droid")
+
+# works, default value for species_arg
+plot_species(highlight_color = "red")
+
+formals("plot_species")
+```
+
+
+### Global vs. local variables
+
+```{r}
+plot_species2 <- function(species_arg = "Human", highlight_color) {
+  # starwars is available locally, but not *defined* locally!
+  species_data <- starwars %>%
+    filter(species == species_arg)
+  ggplot(species_data, aes(x = mass, y = height)) + 
+    geom_point(color = highlight_color)
+}
+```
+
+```{r}
+plot_species2(highlight_color = "blue")
+
+# local variable not in Global environment
+species_data
+
+find("starwars")
+search()
+
+
+starwars <- "nothing"
+
+plot_species2(highlight_color = "blue")
+```
+
