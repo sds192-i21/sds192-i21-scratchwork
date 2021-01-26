@@ -78,3 +78,166 @@ starwars <- "nothing"
 plot_species2(highlight_color = "blue")
 ```
 
+## Iteration
+
+```{r}
+library(tidyverse)
+
+starwars %>%
+  group_by(species, sex) %>%
+  select(height, mass) %>%
+  summarise(
+    height = mean(height, na.rm = TRUE),
+    mass = mean(mass, na.rm = TRUE)
+  ) %>%
+  ggplot(aes(x = height, y = mass)) +
+  geom_point()
+```
+
+### Vectorized functions
+
+```{r}
+c(1, 4, 7)^2
+exp(c(1:10))
+
+nchar(c("word", "another", "thing"))
+```
+
+### Loops
+
+```{r}
+# you can for loops in R, but don't!
+for (i in 1:10) {
+  print(i)
+}
+
+map(1:10, print)
+
+# base R pattern -- use map() instead
+lapply(1:10, print)
+
+# map always returns a list
+map(1:10, exp) %>% class()
+
+# map_dbl always returns a double
+map_dbl(1:10, exp) %>% class()
+
+# probably useless
+map_chr(1:10, exp)
+
+```
+
+
+```{r}
+library(babynames)
+most_popular_year <- function(name_arg) {
+  babynames %>%
+    filter(name == name_arg) %>%
+#    filter(name %in% name_arg) %>%
+#    filter(name == name_arg1 | name == name_arg2) %>%
+    group_by(year) %>%
+    summarize(total = sum(prop)) %>%
+    arrange(desc(total)) %>%
+    head(1) %>%
+    select(year)
+}
+
+# doesn't work because most_popular_year is NOT vectorized!
+most_popular_year(c("Benjamin", "Cory"))
+# doesn't work because function only takes on argument
+most_popular_year("Benjamin", "Cory")
+
+# give me *one* data frame
+map_dfr(c("Benjamin", "Cory"), most_popular_year)
+# equivalent
+c("Benjamin", "Cory") %>%
+  map(most_popular_year) %>%
+  bind_rows()
+```
+
+## Multiple arguments
+
+```{r}
+most_popular_year <- function(name_arg, n = 1) {
+  babynames %>%
+    filter(name == name_arg) %>%
+    group_by(name, year) %>%
+    summarize(total = sum(prop)) %>%
+    arrange(desc(total)) %>%
+    head(n) %>%
+    select(year)
+}
+
+# 10 most popular years
+most_popular_year("Benjamin", n = 10)
+
+c("Benjamin", "Cory") %>%
+  map_dfr(most_popular_year, n = 5)
+
+# same! But less efficient coding-wise (more typing)
+bind_rows(
+  most_popular_year("Benjamin", n = 5),
+  most_popular_year("Cory", n = 5)
+)
+
+bind_rows(
+  most_popular_year("Benjamin", n = 5),
+  most_popular_year("Cory", n = 3)
+)
+
+# doesn't really do what we want -- doesn't iterate over n
+c("Benjamin", "Cory") %>%
+  map_dfr(most_popular_year, n = c(3, 5))
+
+map2_dfr(c("Benjamin", "Cory"), c(3, 5), most_popular_year)
+
+c("Benjamin", "Cory") %>%
+  map2_dfr(c(3, 5), most_popular_year)
+
+```
+
+## Using the formula interface
+
+```{r}
+names <- c("Benjamin", "Cory")
+
+# same as above, but using formula interface
+names %>%
+#  map_dfr(most_popular_year)
+  map_dfr(~most_popular_year(.x))
+
+
+names %>%
+#  map2_dfr(c(3, 5), most_popular_year)
+  # alternatively...
+  map2_dfr(c(3, 5), ~most_popular_year(.x, .y))
+
+```
+
+```{r}
+top10 <- function(data) {
+  data %>%
+    group_by(name) %>%
+    summarize(births = sum(n)) %>%
+    arrange(desc(births)) %>%
+    head(10)
+}
+top10(data = babynames)
+
+
+top_by_decade <- babynames %>%
+  mutate(decade = 10 * floor(year / 10)) %>%
+  group_by(decade) %>%
+  group_modify(~top10(.x))
+
+# pseudocode!!
+top10(filter(babynames, decade == "1880s"))
+top10(filter(babynames, decade == "1890s"))
+
+
+babynames %>%
+  mutate(decade = 10 * floor(year / 10)) %>%
+  group_by(decade) %>%
+  group_modify(~top10(.x))
+```
+
