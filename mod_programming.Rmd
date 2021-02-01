@@ -241,3 +241,121 @@ babynames %>%
   group_modify(~top10(.x))
 ```
 
+## Assignment
+
+```{r}
+starwars <- "nothing"
+
+# same!
+starwars = "nothing"
+
+# other direction
+starwars -> nothing
+```
+
+```{r}
+# ask a question?
+starwars == "nothing"
+
+starwars %>%
+  filter(species == "Human")
+
+starwars %>%
+  mutate(are_you_tall = height > mass) %>%
+  filter(!are_you_tall)
+
+# works, because 1 divides 87
+starwars %>%
+  filter(TRUE)
+
+# doesn't work, because 2 doesn't divide 87
+starwars %>%
+  filter(c(TRUE, FALSE))
+
+
+starwars %>%
+  filter(species == "Human")
+
+# fails, but...
+starwars %>%
+  filter(species == Human)
+
+# works if there is a variable in starwars called "Human"
+starwars %>%
+  mutate(Human = rep(c("Human", "Droid", "Wookiee"), 29)) %>%
+  filter(species == Human)
+
+# also works if Human exists in global environment, and is appropriately sized!
+# works, because it's of lenght 87
+Human <- rep(c("Human", "Droid", "Wookiee"), 29)
+# doesn't work, because not of length 87
+Human <- rep(c("Human", "Droid", "Wookiee"), 25)
+starwars %>%
+  filter(species == Human)
+
+
+```
+
+## Factors
+
+
+```{r}
+starwars %>%
+  glimpse()
+
+# tidyverse equivalence
+hair <- starwars %>%
+  pull(hair_color)
+
+# base R pattern to extract a vector from a data.frame
+starwars$hair_color
+
+class(hair)
+
+fct_hair <- factor(hair)
+
+# factors can be converted to integers!
+as.integer(fct_hair)
+
+# character vectors cannot be converted to integers!
+as.integer(hair)
+```
+
+### Ordering
+
+```{r}
+levels(fct_hair)
+is.ordered(fct_hair)
+
+# facets appear in order of default levels of hair_color
+ggplot(starwars, aes(x = mass, y = height)) + 
+  geom_point() +
+  facet_wrap(~hair_color)
+
+
+# change the order of the factor levels
+starwars_inorder <- starwars %>%
+  mutate(
+    fct_hair = factor(hair_color, ordered = TRUE),
+    fct_hair2 = fct_reorder(fct_hair, birth_year)
+  )
+
+starwars_inorder %>%
+  pull(fct_hair) %>%
+  levels()
+
+starwars_inorder %>%
+  pull(fct_hair2) %>%
+  levels()
+
+ggplot(starwars_inorder, aes(x = mass, y = height)) + 
+  geom_point() +
+  facet_wrap(~fct_hair2)
+
+factor(c("1", "10", "2"), levels = c("1", "2", "10"), ordered = TRUE)
+
+factor(c("1", "10", "2"), levels = c("1", "2", "10"), ordered = TRUE) %>% sort()
+
+fct_reorder(factor(c("1", "10", "2"), ordered = TRUE), c("1", "2", "10"))
+```
+

@@ -1,0 +1,65 @@
+---
+title: "Geospatial data"
+author: "Ben Baumer"
+date: "2/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(macleish)
+```
+
+## Basic data exploration
+
+```{r}
+boundary <- macleish_layers %>%
+  pluck("boundary")
+
+trails <- macleish_layers %>%
+  pluck("trails")
+
+trails %>%
+  filter(name == "Western Loop")
+```
+
+## Static plots
+
+```{r}
+ggplot(boundary) +
+  geom_sf() + 
+  geom_sf(data = trails, aes(color = name)) +
+  scale_color_brewer(palette = "Set2")
+```
+
+## Dynamic plots
+
+```{r}
+library(leaflet)
+leaflet(boundary) %>%
+  addTiles() %>%
+  addPolygons() %>%
+  addPolylines(data = trails)
+```
+
+## Working with lists
+
+```{r}
+str(macleish_layers)
+
+# fine -- it's a base R pattern -- not pipeable
+macleish_layers$boundary
+
+# works, but returns a *list* and it also not pipeable!
+macleish_layers["boundary"]
+
+# same as $ or pluck() pattern -- returns an `sf` object -- not pipeable
+macleish_layers[["boundary"]]
+
+# returns an `sf` object and is pipeable!
+macleish_layers %>%
+  pluck("boundary")
+```
+
