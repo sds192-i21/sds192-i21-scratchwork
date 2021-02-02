@@ -63,3 +63,108 @@ macleish_layers %>%
   pluck("boundary")
 ```
 
+## Bike trails
+
+```{r}
+url <- "http://download.massgis.digital.mass.gov/shapefiles/state/biketrails_arc.zip"
+local_file <- basename(url)
+download.file(url, destfile = local_file)
+unzip(local_file, exdir = "biketrails")
+```
+
+```{r}
+library(sf)
+# no longer necessary
+# path.expand("~/sds192-i21-scratchwork/biketrails/biketrails_arc/")
+bike_trails <- read_sf("biketrails/biketrails_arc")
+bike_trails
+```
+
+- `st_*()` functions
+
+```{r}
+trail_lengths <- bike_trails %>%
+  select(TRAILNAME, SHAPE_LEN) %>%
+  mutate(trail_length = st_length(geometry))
+
+trail_lengths %>%
+  pull(trail_length) %>%
+  units::set_units("miles")
+```
+
+
+- units
+- pronouns
+
+```{r}
+library(leaflet)
+
+bike_trails_4326 <- bike_trails %>%
+  st_transform(4326)
+
+leaflet(bike_trails_4326) %>%
+  addTiles() %>%
+  addPolylines(popup = ~TRAILNAME) %>%
+  addPolygons(data = pluck(macleish_layers, "boundary"), popup = ~Shape_Leng)
+
+
+ggplot(bike_trails) + 
+  geom_sf(aes(color = TRAILNAME))
+```
+
+- `~` (in `leaflet` and in general)
+
+```{r}
+
+leaflet(pluck(macleish_layers, "boundary")) %>%
+  addTiles() %>%
+  addPolylines(data = bike_trails_4326, popup = ~TRAILNAME) %>%
+  addPolygons(popup = ~Shape_Leng)
+
+
+leaflet() %>%
+  addTiles() %>%
+  addPolylines(data = bike_trails_4326, popup = ~TRAILNAME) %>%
+  addPolygons(data = pluck(macleish_layers, "boundary"), popup = ~Shape_Leng)
+```
+
+## Color in leaflet
+
+```{r}
+# doesn't work
+leaflet(pluck(macleish_layers, "boundary")) %>%
+  addTiles() %>%
+  addPolylines(data = bike_trails_4326, popup = ~TRAILNAME, color = ~TRAILNAME)
+```
+
+## Areas
+
+```{r}
+forests <- macleish_layers %>%
+  pluck("forests")
+
+# approach 1
+forests %>%
+  mutate(forest_area = st_area(geometry)) %>%
+  group_by(type) %>%
+  summarize(
+    total_area = sum(forest_area),
+    total_area_acres = units::set_units(total_area, "acres"),
+    total_area_acres2 = total_area / 4356
+  )
+
+# also works
+forests %>%
+  group_by(type) %>%
+  summarize(
+    total_area = sum(st_area(geometry))
+  )
+
+# approach 2
+forests %>%
+  group_by(type) %>%
+  summarize() %>%
+  mutate(total_area = st_area(geometry))
+
+```
+
