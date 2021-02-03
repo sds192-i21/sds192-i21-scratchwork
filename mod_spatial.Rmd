@@ -143,7 +143,7 @@ leaflet(pluck(macleish_layers, "boundary")) %>%
 forests <- macleish_layers %>%
   pluck("forests")
 
-# approach 1
+# approach 1 -- computing areas of each of 54 features, and then adding them up
 forests %>%
   mutate(forest_area = st_area(geometry)) %>%
   group_by(type) %>%
@@ -160,11 +160,72 @@ forests %>%
     total_area = sum(st_area(geometry))
   )
 
-# approach 2
+# approach 2 -- spatial aggregation and then area computation of 16 features
 forests %>%
   group_by(type) %>%
-  summarize() %>%
+  summarize(num_forests = n(), do_union = FALSE) %>%
   mutate(total_area = st_area(geometry))
+```
 
+## Joins and spatial joins
+
+```{r}
+camp_sites <- macleish_layers %>%
+  pluck("camp_sites")
+
+camp_sites
+
+camp_attributes <- tibble(
+  name = c("Group Campsite", "Remote Campsite"),
+  capacity = c(6, 3),
+  has_firewood = c(TRUE, FALSE)
+)
+
+# same thing!
+camp_attributes <- tribble(
+  ~name, ~capacity, ~has_firewood, 
+  "Group Campsite", 6, TRUE,
+  "Remote Campsite", 3, FALSE
+)
+
+# non-spatial join -- uses left_join.sf() method
+camp_sites_extra <- camp_sites %>%
+  left_join(camp_attributes, by = "name")
+
+library(leaflet)
+
+leaflet(camp_sites_extra) %>%
+  addTiles() %>%
+  addMarkers(popup = ~paste("<b>", name, "</b><br>", capacity))
+```
+
+
+```{r}
+# left join
+camps_forests <- camp_sites_extra %>%
+  st_join(forests)
+
+# inner_join -- POINT geometry
+camp_sites_extra %>%
+  st_join(forests, left = FALSE)
+
+# left join -- equivalent to right join of original use of st_join()
+forests %>%
+  st_join(camp_sites_extra)
+
+# MULTIPOLYGON geometry!!
+forests_intersecting_camps <- forests %>%
+  st_join(camp_sites_extra, left = FALSE)
+
+# returns nothing because forests are not covered by camp sites
+forests %>%
+  st_join(camp_sites_extra, left = FALSE, join = st_covered_by)
+
+
+
+leaflet(camps_forests) %>%
+  addTiles() %>%
+  addMarkers(popup = ~paste("<b>", name, "</b><br>", capacity)) %>%
+  addPolygons(data = forests_intersecting_camps, popup = ~type)
 ```
 
