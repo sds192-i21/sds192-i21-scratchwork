@@ -1,0 +1,88 @@
+---
+title: "SQL querying"
+author: "Ben Baumer"
+date: "2/8/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(sds192)
+library(RMySQL)
+db <- dbConnect(
+  MySQL(), 
+  host = "scidb.smith.edu", 
+  user = "sds192", 
+  password = "DSismfc@S", 
+  dbname = "airlines"
+)
+knitr::opts_chunk$set(
+  message = FALSE,
+  echo = TRUE, 
+  connection = db, 
+  max.print = 20
+)
+```
+
+## How to get basic information about what is in tables
+
+```{sql, connection = db}
+SELECT * FROM airports;
+```
+
+
+```{sql, connection = db}
+SHOW TABLES;
+```
+
+```{sql, connection = db}
+DESCRIBE airports;
+```
+
+```{sql, connection = db}
+SELECT * FROM airports LIMIT 0, 20;
+```
+
+## Yelp dataset
+
+```{r}
+db <- dbConnect(
+  MySQL(), 
+  host = "scidb.smith.edu", 
+  user = "sds192", 
+  password = "DSismfc@S", 
+  dbname = "yelp"
+)
+```
+
+```{sql connection=db}
+SHOW TABLES;
+```
+
+```{sql connection=db}
+DESCRIBE reviews;
+```
+
+```{sql connection=db}
+SELECT * FROM reviews LIMIT 0, 20;
+```
+```{sql connection=db}
+DESCRIBE businesses;
+```
+
+```{sql connection=db, max.print=100}
+SELECT 
+  name AS restaurant, 
+  COUNT(DISTINCT id) AS num_restaurants, 
+  COUNT(*) AS num_reviews, 
+  AVG(r.stars) AS avg_stars
+FROM reviews AS r
+JOIN businesses AS b ON r.business_id = b.id
+WHERE name LIKE '%taco%'
+GROUP BY id
+HAVING num_reviews >= 25
+ORDER BY avg_stars DESC;
+```
+
