@@ -85,4 +85,134 @@ GROUP BY id
 HAVING num_reviews >= 25
 ORDER BY avg_stars DESC;
 ```
+```{sql connection=db}
+SHOW PROCESSLIST;
+/* KILL 17530;
+```
+## Explain
+
+```{r}
+db <- dbConnect(
+  MySQL(), 
+  host = "scidb.smith.edu", 
+  user = "sds192", 
+  password = "DSismfc@S", 
+  dbname = "imdb"
+)
+```
+
+```{sql connection=db}
+
+
+SELECT * FROM title 
+WHERE title LIKE '%The Hunger Games%'
+  AND kind_id = 1;
+
+#EXPLAIN
+SELECT * 
+FROM cast_info AS ci
+JOIN title AS t ON t.id = ci.movie_id
+JOIN name AS n ON n.id = ci.person_id
+WHERE t.id = 4368646;
+
+#EXPLAIN
+SELECT * 
+FROM cast_info AS ci
+WHERE ci.movie_id = 4368646;
+
+# Jennifer Lawrence
+SELECT role, COUNT(*) AS num_movies, 
+  GROUP_CONCAT(ci.movie_id) AS movies
+FROM cast_info AS ci
+JOIN role_type AS rt ON rt.id = ci.role_id
+WHERE person_id = 3416438
+GROUP BY role_id;
+
+#EXPLAIN
+SELECT role, t.production_year, COUNT(*) AS num_movies
+FROM cast_info AS ci
+JOIN role_type AS rt ON rt.id = ci.role_id
+JOIN title AS t ON t.id = ci.movie_id
+WHERE person_id = 3416438
+GROUP BY ci.role_id, t.production_year
+ORDER BY role_id, production_year;
+```
+
+```{sql, connection=db, output.var="jlaws"}
+SELECT * FROM name WHERE name LIKE '%Lawrence, Jennifer%';
+```
+
+
+```{r}
+jlaw <- jlaws %>%
+  filter(imdb_index == "III") %>%
+  pull(id)
+```
+
+### Subquery
+
+```{sql, connection=db}
+SELECT role, t.production_year, COUNT(*) AS num_movies
+FROM cast_info AS ci
+JOIN role_type AS rt ON rt.id = ci.role_id
+JOIN title AS t ON t.id = ci.movie_id
+WHERE person_id = (
+    SELECT id FROM name WHERE name = 'Lawrence, Jennifer' AND imdb_index = 'III'
+  )
+GROUP BY ci.role_id, t.production_year
+ORDER BY role_id, production_year;
+```
+### Join
+
+```{sql, connection=db}
+SELECT role, t.production_year, COUNT(*) AS num_movies
+FROM cast_info AS ci
+JOIN role_type AS rt ON rt.id = ci.role_id
+JOIN title AS t ON t.id = ci.movie_id
+JOIN name AS n ON n.id = ci.person_id
+WHERE name = 'Lawrence, Jennifer' AND n.imdb_index = 'III'
+GROUP BY ci.role_id, t.production_year
+ORDER BY role_id, production_year;
+```
+### Binding R values into SQL
+
+```{sql, connection=db}
+SELECT role, t.production_year, COUNT(*) AS num_movies
+FROM cast_info AS ci
+JOIN role_type AS rt ON rt.id = ci.role_id
+JOIN title AS t ON t.id = ci.movie_id
+WHERE person_id = ?jlaw
+GROUP BY ci.role_id, t.production_year
+ORDER BY role_id, production_year;
+```
+
+
+
+## Baseball
+
+```{r}
+db <- dbConnect(
+  MySQL(), 
+  host = "scidb.smith.edu", 
+  user = "sds192", 
+  password = "DSismfc@S", 
+  dbname = "lahman"
+)
+```
+
+
+```{sql, connection=db}
+SELECT 
+  CONCAT(nameFirst, ' ', nameLast) AS name, 
+  COUNT(DISTINCT yearID) AS num_years,
+  CONCAT(MIN(yearID), '-', MAX(yearID)) AS span,
+  SUM(H) AS Hits, 
+  SUM(HR) AS HomeRuns,
+  SUM(H) / sum(AB) AS BattingAverage
+FROM Batting AS b
+JOIN Master AS m ON m.playerID = b.playerID
+GROUP BY b.playerID
+HAVING Hits >= 3000 AND HomeRuns >= 500
+ORDER BY Hits DESC;
+```
 
